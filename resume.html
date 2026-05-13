@@ -1,0 +1,527 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Adarsh A. | SYSTEM.HUD</title>
+    <!-- Fonts: Rajdhani for UI text, Fira Code for terminal/code aesthetics -->
+    <link href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;500&family=Rajdhani:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            /* Cyberpunk Color Palette */
+            --bg-dark: #05050a;
+            --neon-cyan: #00f3ff;
+            --neon-magenta: #ff00ff;
+            --neon-yellow: #fcee0a;
+            --text-main: #e2e8f0;
+            --text-dim: #8b9bb4;
+            
+            /* Glassmorphism Variables */
+            --glass-bg: rgba(12, 16, 36, 0.5);
+            --glass-border-cyan: rgba(0, 243, 255, 0.3);
+            --glass-border-magenta: rgba(255, 0, 255, 0.3);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Rajdhani', sans-serif;
+            background-color: var(--bg-dark);
+            /* Added glowing ambient lights in the background for depth */
+            background-image: 
+                radial-gradient(circle at 15% 50%, rgba(0, 243, 255, 0.08) 0%, transparent 50%),
+                radial-gradient(circle at 85% 30%, rgba(255, 0, 255, 0.08) 0%, transparent 50%);
+            color: var(--text-main);
+            line-height: 1.6;
+            min-height: 100vh;
+            overflow-x: hidden;
+            position: relative;
+        }
+
+        /* --- Cyberpunk Grid & Scanline Background --- */
+        body::before {
+            content: '';
+            position: fixed;
+            top: 0; left: 0; width: 100vw; height: 100vh;
+            background: 
+                linear-gradient(transparent 95%, rgba(0, 243, 255, 0.2) 100%),
+                linear-gradient(90deg, transparent 95%, rgba(0, 243, 255, 0.2) 100%);
+            background-size: 40px 40px;
+            z-index: -2;
+            transform: perspective(600px) rotateX(60deg) translateY(-100px) scale(3.5);
+            animation: gridMove 15s linear infinite;
+            /* Added a mask to fade out the grid towards the top */
+            -webkit-mask-image: linear-gradient(to top, rgba(0,0,0,1) 10%, rgba(0,0,0,0) 70%);
+            mask-image: linear-gradient(to top, rgba(0,0,0,1) 10%, rgba(0,0,0,0) 70%);
+        }
+
+        body::after {
+            content: '';
+            position: fixed;
+            top: 0; left: 0; width: 100vw; height: 100vh;
+            background: repeating-linear-gradient(
+                0deg,
+                rgba(0, 0, 0, 0.15),
+                rgba(0, 0, 0, 0.15) 1px,
+                transparent 1px,
+                transparent 2px
+            );
+            pointer-events: none;
+            z-index: 999;
+        }
+
+        @keyframes gridMove {
+            0% { background-position: 0 0; }
+            100% { background-position: 0 30px; }
+        }
+
+        /* --- Layout --- */
+        .hud-container {
+            max-width: 1200px;
+            margin: 2rem auto;
+            padding: 0 20px;
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 2rem;
+            position: relative;
+            z-index: 1;
+        }
+
+        /* Futuristic HUD Bracket Bracing around the whole container */
+        .hud-container::before, .hud-container::after {
+            content: '';
+            position: absolute;
+            width: 50px;
+            height: 50px;
+            pointer-events: none;
+            z-index: 10;
+        }
+        .hud-container::before {
+            top: -20px; left: 0;
+            border-top: 3px solid var(--neon-cyan);
+            border-left: 3px solid var(--neon-cyan);
+            box-shadow: -5px -5px 15px rgba(0,243,255,0.4);
+        }
+        .hud-container::after {
+            bottom: -20px; right: 0;
+            border-bottom: 3px solid var(--neon-magenta);
+            border-right: 3px solid var(--neon-magenta);
+            box-shadow: 5px 5px 15px rgba(255,0,255,0.4);
+        }
+
+        /* --- Glassmorphism Panels --- */
+        .glass-panel {
+            background: var(--glass-bg);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid var(--glass-border-cyan);
+            border-radius: 4px;
+            padding: 2rem;
+            box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.6), inset 0 0 20px rgba(0, 243, 255, 0.05);
+            position: relative;
+            transition: all 0.3s ease;
+        }
+
+        .glass-panel:hover {
+            box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.8), inset 0 0 20px rgba(0, 243, 255, 0.15);
+            border-color: var(--neon-cyan);
+        }
+
+        /* Magenta variant for specific panels */
+        .glass-panel.magenta {
+            border-color: var(--glass-border-magenta);
+            box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.6), inset 0 0 20px rgba(255, 0, 255, 0.05);
+        }
+        .glass-panel.magenta:hover {
+            border-color: var(--neon-magenta);
+            box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.8), inset 0 0 20px rgba(255, 0, 255, 0.15);
+        }
+
+        /* Corner glowing accents */
+        .glass-panel::before, .glass-panel::after {
+            content: '';
+            position: absolute;
+            width: 20px;
+            height: 20px;
+            border: 2px solid var(--neon-cyan);
+            transition: all 0.3s ease;
+        }
+        .glass-panel::before { top: -1px; left: -1px; border-right: none; border-bottom: none; }
+        .glass-panel::after { bottom: -1px; right: -1px; border-left: none; border-top: none; }
+        
+        .glass-panel.magenta::before, .glass-panel.magenta::after { border-color: var(--neon-magenta); }
+
+        /* --- Typography & Elements --- */
+        h1 {
+            font-size: 3.5rem;
+            font-weight: 700;
+            color: #fff;
+            text-shadow: 0 0 10px var(--neon-cyan), 0 0 20px var(--neon-cyan), 0 0 40px var(--neon-cyan);
+            letter-spacing: 4px;
+            text-transform: uppercase;
+            line-height: 1.1;
+            position: relative;
+            display: inline-block;
+        }
+
+        /* Glitch Effect for H1 */
+        h1::before, h1::after {
+            content: attr(data-text);
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(12, 16, 36, 0.0);
+        }
+        h1::before {
+            left: 2px;
+            text-shadow: -2px 0 var(--neon-magenta);
+            animation: glitch-anim-1 2s infinite linear alternate-reverse;
+        }
+        h1::after {
+            left: -2px;
+            text-shadow: 2px 0 var(--neon-cyan);
+            animation: glitch-anim-2 3s infinite linear alternate-reverse;
+        }
+
+        @keyframes glitch-anim-1 {
+            0% { clip-path: inset(20% 0 80% 0); }
+            20% { clip-path: inset(60% 0 10% 0); }
+            40% { clip-path: inset(40% 0 50% 0); }
+            60% { clip-path: inset(80% 0 5% 0); }
+            80% { clip-path: inset(10% 0 70% 0); }
+            100% { clip-path: inset(30% 0 20% 0); }
+        }
+        @keyframes glitch-anim-2 {
+            0% { clip-path: inset(10% 0 60% 0); }
+            20% { clip-path: inset(30% 0 20% 0); }
+            40% { clip-path: inset(70% 0 10% 0); }
+            60% { clip-path: inset(20% 0 50% 0); }
+            80% { clip-path: inset(50% 0 30% 0); }
+            100% { clip-path: inset(5% 0 80% 0); }
+        }
+
+        h2 {
+            font-size: 1.5rem;
+            color: var(--neon-cyan);
+            font-family: 'Fira Code', monospace;
+            margin-bottom: 1.5rem;
+            text-transform: uppercase;
+            display: flex;
+            align-items: center;
+        }
+        
+        .magenta h2 { color: var(--neon-magenta); }
+
+        h2::before {
+            content: '>';
+            margin-right: 10px;
+            animation: blink 1s infinite;
+        }
+
+        h3 {
+            font-size: 1.2rem;
+            color: #fff;
+            margin-bottom: 0.5rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        p, li {
+            font-size: 1.05rem;
+            color: var(--text-dim);
+            margin-bottom: 1rem;
+        }
+
+        a {
+            color: var(--neon-cyan);
+            text-decoration: none;
+            transition: 0.3s;
+        }
+        a:hover { text-shadow: 0 0 8px var(--neon-cyan); }
+
+        /* --- Cyber Tags & Buttons --- */
+        .cyber-tags {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin-top: 10px;
+        }
+
+        .tag {
+            background: rgba(0, 243, 255, 0.05);
+            border: 1px solid var(--glass-border-cyan);
+            color: var(--neon-cyan);
+            padding: 4px 12px;
+            font-family: 'Fira Code', monospace;
+            font-size: 0.85rem;
+            clip-path: polygon(10px 0, 100% 0, 100% calc(100% - 10px), calc(100% - 10px) 100%, 0 100%, 0 10px);
+            transition: all 0.3s;
+        }
+
+        .tag:hover {
+            background: var(--neon-cyan);
+            color: var(--bg-dark);
+            box-shadow: 0 0 10px var(--neon-cyan);
+        }
+
+        .magenta .tag {
+            background: rgba(255, 0, 255, 0.05);
+            border-color: var(--glass-border-magenta);
+            color: var(--neon-magenta);
+        }
+        .magenta .tag:hover {
+            background: var(--neon-magenta);
+            color: var(--bg-dark);
+            box-shadow: 0 0 10px var(--neon-magenta);
+        }
+
+        .btn {
+            display: inline-block;
+            background: rgba(0, 243, 255, 0.1);
+            border: 1px solid var(--neon-cyan);
+            color: var(--neon-cyan);
+            padding: 10px 20px;
+            font-family: 'Fira Code', monospace;
+            text-transform: uppercase;
+            font-weight: bold;
+            clip-path: polygon(15px 0, 100% 0, 100% calc(100% - 15px), calc(100% - 15px) 100%, 0 100%, 0 15px);
+            margin-right: 10px;
+            margin-bottom: 10px;
+            cursor: pointer;
+        }
+
+        .btn:hover {
+            background: var(--neon-cyan);
+            color: var(--bg-dark);
+            box-shadow: 0 0 15px var(--neon-cyan);
+        }
+
+        /* --- Custom Grid Placement --- */
+        .hero-section { grid-column: 1 / -1; }
+        .experience-section { grid-column: 1 / -1; }
+        
+        ul { list-style-type: none; }
+        ul li {
+            position: relative;
+            padding-left: 20px;
+        }
+        ul li::before {
+            content: '■';
+            position: absolute;
+            left: 0;
+            color: var(--neon-cyan);
+            font-size: 0.8rem;
+            top: 4px;
+        }
+        .magenta ul li::before { color: var(--neon-magenta); }
+
+        @keyframes blink { 0%, 100% { opacity: 1; } 50% { opacity: 0; } }
+
+        /* --- Hero Section & Profile Pic --- */
+        .hero-content {
+            display: flex;
+            align-items: center;
+            gap: 1.5rem;
+            flex-wrap: wrap;
+        }
+
+        .profile-pic-container {
+            flex-shrink: 0;
+            position: relative;
+        }
+
+        /* Spinning tech ring around profile pic */
+        .profile-pic-container::after {
+            content: '';
+            position: absolute;
+            top: -10px; left: -10px; right: -10px; bottom: -10px;
+            border-radius: 50%;
+            border: 2px dashed var(--neon-magenta);
+            animation: spin-reverse 15s linear infinite;
+            pointer-events: none;
+        }
+
+        .profile-pic-container::before {
+            content: '';
+            position: absolute;
+            top: -5px; left: -5px; right: -5px; bottom: -5px;
+            border-radius: 50%;
+            border: 2px solid transparent;
+            border-top-color: var(--neon-cyan);
+            border-bottom-color: var(--neon-cyan);
+            animation: spin 8s linear infinite;
+            pointer-events: none;
+        }
+
+        .profile-pic {
+            width: 160px;
+            height: 160px;
+            border-radius: 50%;
+            object-fit: cover;
+            border: 3px solid var(--neon-cyan);
+            box-shadow: 0 0 25px rgba(0, 243, 255, 0.5), inset 0 0 20px rgba(0, 243, 255, 0.3);
+            background-color: rgba(0, 243, 255, 0.1);
+            position: relative;
+            z-index: 2;
+            transition: all 0.3s ease;
+        }
+
+        .profile-pic:hover {
+            box-shadow: 0 0 40px var(--neon-cyan), inset 0 0 30px var(--neon-cyan);
+            transform: scale(1.05);
+        }
+
+        @keyframes spin { 100% { transform: rotate(360deg); } }
+        @keyframes spin-reverse { 100% { transform: rotate(-360deg); } }
+
+        /* --- Responsive --- */
+        @media (max-width: 900px) {
+            .hud-container { grid-template-columns: 1fr; }
+            h1 { font-size: 2.5rem; }
+            .hero-content { flex-direction: column; text-align: center; }
+            .hero-content .hero-text { align-items: center; display: flex; flex-direction: column; }
+            .btn { margin: 5px; }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="hud-container">
+        
+        <!-- HEADER / HERO -->
+        <header class="glass-panel hero-section">
+            <div class="hero-content">
+                <div class="profile-pic-container">
+                    <!-- Replace the src below with your actual image path -->
+                    <img src="dp.jpg" alt="Profile Picture" class="profile-pic">
+                </div>
+                <div class="hero-text">
+                    <h1 data-text="ADARSH A.">ADARSH A.</h1>
+                    <h3 style="color: var(--neon-cyan); font-family: 'Fira Code'; letter-spacing: 2px; text-shadow: 0 0 5px var(--neon-cyan);">> Junior DevOps Engineer_</h3>
+                    <p style="max-width: 800px; margin-top: 15px; font-size: 1.15rem; color: #cfd8e6;">"Orchestrating majestic infrastructure. Bridging development and operations through scalable automation, robust pipelines, and futuristic system architectures."</p>
+                    
+                    <div style="margin-top: 25px;">
+                        <a href="mailto:your.email@example.com" class="btn">Initialize_Comms</a>
+                        <a href="https://www.linkedin.com/in/adarshhhh" target="_blank" class="btn">LinkedIn.exe</a>
+                        <a href="https://github.com/adarshanil7" target="_blank" class="btn">GitHub_Repo</a>
+                    </div>
+                </div>
+            </div>
+        </header>
+
+        <!-- SKILLS / PAYLOAD -->
+        <section class="glass-panel">
+            <h2>Technical_Payload</h2>
+            
+            <div style="margin-bottom: 1.5rem;">
+                <h3>DevOps & Cloud</h3>
+                <div class="cyber-tags">
+                    <span class="tag">Docker</span>
+                    <span class="tag">CI/CD Pipelines</span>
+                    <span class="tag">Git / GitHub</span>
+                    <span class="tag">REST APIs</span>
+                </div>
+            </div>
+
+            <div style="margin-bottom: 1.5rem;">
+                <h3>Linux OS & Automation</h3>
+                <div class="cyber-tags">
+                    <span class="tag">Bash / Shell</span>
+                    <span class="tag">Python</span>
+                    <span class="tag">Systemd</span>
+                    <span class="tag">Cron</span>
+                </div>
+            </div>
+
+            <div>
+                <h3>Networking & Data</h3>
+                <div class="cyber-tags">
+                    <span class="tag">TCP/IP</span>
+                    <span class="tag">SSL/TLS</span>
+                    <span class="tag">Firewalls</span>
+                    <span class="tag">MongoDB</span>
+                    <span class="tag">MySQL</span>
+                </div>
+            </div>
+        </section>
+
+        <!-- PROJECTS / LOGS -->
+        <section class="glass-panel magenta">
+            <h2>Deployment_Logs</h2>
+            
+            <div style="margin-bottom: 2rem;">
+                <h3>DEBATO: AI Backend Architecture</h3>
+                <p style="font-family: 'Fira Code'; font-size: 0.85rem; color: var(--neon-yellow);">[Node.js, Python, MongoDB, Bash]</p>
+                <ul>
+                    <li>Engineered Bash scripts to automate environment setup, reducing manual deployment toil.</li>
+                    <li>Built robust APIs with dedicated health-check endpoints for automated uptime monitoring.</li>
+                    <li>Designed MongoDB schemas with compound indexing for real-time latency reduction.</li>
+                </ul>
+            </div>
+
+            <div>
+                <h3>Scalable Service System</h3>
+                <p style="font-family: 'Fira Code'; font-size: 0.85rem; color: var(--neon-yellow);">[PHP, MySQL, Linux]</p>
+                <ul>
+                    <li>Refactored and indexed MySQL queries to guarantee concurrent I/O stability.</li>
+                    <li>Deployed strict server-side input validation and enforced secure authentication.</li>
+                </ul>
+            </div>
+        </section>
+
+        <!-- EXPERIENCE -->
+        <section class="glass-panel experience-section">
+            <h2>Operational_Experience</h2>
+            <div>
+                <h3 style="color: var(--neon-yellow);">Python Django Developer Intern</h3>
+                <p style="font-family: 'Fira Code';">@ Zoople Technologies, Ernakulam | [06.2024 - 07.2024]</p>
+                <ul style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 10px;">
+                    <li>Managed deployment and configuration of Django apps on live Linux servers.</li>
+                    <li>Diagnosed performance bottlenecks via deep log analysis and query optimization.</li>
+                    <li>Actively debugged production faults, contributing to lowered MTTR.</li>
+                    <li>Set up and maintained continuous process monitoring.</li>
+                </ul>
+            </div>
+        </section>
+
+        <!-- ACADEMIA -->
+        <section class="glass-panel">
+            <h2>Academia_&_Certs</h2>
+            <div style="margin-bottom: 1.5rem;">
+                <h3>Integrated MCA Graduate</h3>
+                <p>Amal Jyothi College of Engineering | CGPA: 7.9</p>
+                
+                <h3>Class XII (Commerce)</h3>
+                <p>St. Thomas HSS, Erumely | GPA: 9.7/10</p>
+            </div>
+            
+            <h3>Certifications</h3>
+            <div class="cyber-tags">
+                <span class="tag">OCI Generative AI Pro</span>
+                <span class="tag">OCI AI Foundations</span>
+                <span class="tag">Cisco IoT</span>
+                <span class="tag">Google Digital Marketing</span>
+            </div>
+        </section>
+
+        <!-- ABOUT / DIRECTIVES -->
+        <section class="glass-panel magenta">
+            <h2>Core_Directives</h2>
+            <p>Integrated MCA graduate transitioning into <strong>DevOps and Site Reliability Engineering</strong>. Focus is strictly on continuous integration, automated deployments, and building fault-tolerant environments via Infrastructure as Code.</p>
+            <ul>
+                <li><strong>Infrastructure Mindset:</strong> Capacity planning, CI/CD optimization, postmortem analysis.</li>
+                <li><strong>Environment Tinkering:</strong> Breaking local Linux environments to master disaster recovery.</li>
+                <li><strong>Bridge Comms:</strong> Leveraging structured debate background for clear incident command.</li>
+            </ul>
+        </section>
+
+    </div>
+
+</body>
+</html>
